@@ -2,15 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-//enums
-enum directions{
-	NORTH, SOUTH, EAST, WEST
-};
-
 //structs
-typedef struct Room
-{
+typedef struct Room {
 	int state;
+	int id;
 	struct Room* n;
 	struct Room* s;
 	struct Room* e;
@@ -18,23 +13,40 @@ typedef struct Room
 	struct Creature* crs[10];
 } Room;
 
-typedef struct Creature
-{
+typedef struct Creature {
 	int type;
 	struct Room* loc;
 } Creature;
 
 //prototypes
-void debugInfo(Room* rooms, int len);
+void look(Room** rooms, int* userLocation);
+void userInput(Room* rooms, int userLocation);
 
 //actual functions
-void userInput(void){
+void userInput(Room* rooms, int userLocation){
+	char command[10] = "";
+	int *currentUserLocation = &userLocation;
+	Room** setRooms = &rooms;
 
+	while(strcmp(command, "exit") != 0){
+		printf("%s\n", "Enter a command: ");
+		scanf("%s", command);
+		if(strcmp(command, "look") == 0){
+			printf("%s\n", "You Looked!");
+			look(setRooms, currentUserLocation);
+		} else if(strcmp(command, "exit") == 0){
+			printf("%s\n", "Goodbye");
+			exit(0);
+		} else {
+			printf("%s\n", "Unkown Command.");
+		}
+	}
 }
 
 void setUp(void){
 	int roomAmount;
 	int creatureAmount;
+	int userLocation;
 
 	printf("%s\n", "Enter amount of rooms: ");
 	scanf("%d", &roomAmount);
@@ -44,26 +56,27 @@ void setUp(void){
 		int north, south, east, west;
 		printf("Room #%d\n", i);
 		scanf("%d %d %d %d %d", &rooms[i].state, &north, &south, &east, &west);
+		rooms[i].id = i;
 
 		if(north == -1){
 			rooms[i].n = NULL;
 		} else {
-			rooms[i].n = &rooms[NORTH];
+			rooms[i].n = &rooms[north];
 		}
 		if(south == -1){
 			rooms[i].s = NULL;
 		} else {
-			rooms[i].s = &rooms[SOUTH];
+			rooms[i].s = &rooms[south];
 		}
 		if(east == -1){
 			rooms[i].e = NULL;
 		} else {
-			rooms[i].e = &rooms[EAST];
+			rooms[i].e = &rooms[east];
 		}
 		if(west == -1){
 			rooms[i].w = NULL;
 		} else {
-			rooms[i].w = &rooms[WEST];
+			rooms[i].w = &rooms[west];
 		}
 
 		for(int c = 0; c < 10; c++){
@@ -71,41 +84,77 @@ void setUp(void){
 		}
 	}
 
-	// printf("%s\n", "Enter amount of creatures: ");
-	// scanf("%d", &creatureAmount);
-	// Creature* creatures = (Creature*)malloc(sizeof(Creature) * creatureAmount);
+	printf("%s\n", "Enter amount of creatures: ");
+	scanf("%d", &creatureAmount);
+	Creature* creatures = (Creature*)malloc(sizeof(Creature) * creatureAmount);
 
-	// for(int i = 0; i < creatureAmount; i++){
-	// 	int location;
-	// 	printf("Creature %d\n", i);
-	// 	scanf("%d %d", &creatures[i].type, &location);
+	for(int i = 0; i < creatureAmount; i++){
+		int type;
+		int location;
 
-	// 	for(int j = 0; j < 10; j++){
-	// 		if(rooms[location].crs[j] == NULL){
-	// 			rooms[location].crs[j] = &creatures[i];
-	// 			break;
-	// 		}
-	// 	}
-	// }
-	debugInfo(rooms, roomAmount);
+		printf("Creature %d\n", i);
+		scanf("%d %d", &type, &location);
+		creatures[i].type = type;
+		
+		if(type == 0){
+			userLocation = location;
+		}
 
-
-}
-
-void debugInfo(Room* rooms, int len){
-	for(int i = 0; i < len; i++){
-		printf("%p %p\n", &rooms[i], rooms[i].n);
-		// for(int j = 0; j < 10; j++){
-		// 	// if(rooms[i].crs[j] != NULL){
-		// 	printf("%p %p\n", &rooms[i],&rooms[i].n);
-		// 		// printf("%p\n", &rooms[i].crs[j]->loc);
-		// 	// }
-		// }
+		for(int j = 0; j < 10; j++){
+			if(rooms[location].crs[j] == NULL){
+				rooms[location].crs[j] = &creatures[i];
+				break;
+			}
+		}
 	}
+	userInput(rooms, userLocation);
+
 }
 
-void look(){
+void look(Room** rooms, int* userLocation){
+	printf("Room %d, ", *userLocation);
 
+	int state = (*rooms)[*userLocation].state;
+	char cleanliness[12] = "";
+	if(state == 0){
+		strcpy(cleanliness, "Clean");
+	} else if(state == 1){
+		strcpy(cleanliness, "Half-Dirty");
+	} else {
+		strcpy(cleanliness, "Dirty");
+	}
+	printf("%s", "neighbors");
+	Room lookRoom = (*rooms)[*userLocation];
+	if(lookRoom.n != NULL){
+		printf(" %d to the North,", lookRoom.n->id);
+	}
+	if(lookRoom.s != NULL){
+		printf(" %d to the South,", lookRoom.s->id);
+	}
+	if(lookRoom.e != NULL){
+		printf(" %d to the East,", lookRoom.e->id);
+	}
+	if(lookRoom.w != NULL){
+		printf(" %d to the West,", lookRoom.w->id);
+	}
+
+	printf("%s\n", " contains:");
+	for(int i = 0; i < 10; i++){
+		int lookCreature;
+		if((*rooms)[*userLocation].crs[i] != NULL){
+			lookCreature = (*rooms)[*userLocation].crs[i]->type;
+			if(lookCreature == 0){
+				printf("%s\n", "PC");
+			} else if(lookCreature == 1){
+				printf("%s\n", "Animal");
+			} else{
+				printf("%s\n", "NPC");
+			}
+		}
+	}	
+
+
+	printf("\n");
 }
 
 void creatureLook(){
@@ -126,6 +175,5 @@ void creatureCleanDirty(){
 
 int main(void){
 	setUp();
-	userInput();
 	return 0;
 }
