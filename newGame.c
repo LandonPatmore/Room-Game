@@ -19,26 +19,52 @@ typedef struct Creature {
 } Creature;
 
 //prototypes
-void look(Room** rooms, int* userLocation);
-void userInput(Room* rooms, int userLocation);
+void look(Room* rooms, int* userLocation);
+void userInput(Room* rooms, int roomAmount);
+void cleanDirty(Room* rooms, int* userLocation, int type);
+void move(Room* rooms, int* userLocation, char* direction);
+
+//user respect level (global)
+int userRespect = 40;
 
 //actual functions
-void userInput(Room* rooms, int userLocation){
+void userInput(Room* rooms, int roomAmount){
 	char command[10] = "";
-	int *currentUserLocation = &userLocation;
-	Room** setRooms = &rooms;
+	int* currentUserLocation;
+
+	for(int i = 0; i < roomAmount; i++){
+		for(int j = 0; j < 10; j++){
+			if(rooms[i].crs[j] != NULL && rooms[i].crs[j]->type == 0){
+				currentUserLocation = &rooms[i].crs[j]->loc->id;
+				printf("%s %d\n", "found PC", i);
+			}
+		}
+	}
+
+	Room* setRooms = rooms;
 
 	while(strcmp(command, "exit") != 0){
 		printf("%s\n", "Enter a command: ");
 		scanf("%s", command);
 		if(strcmp(command, "look") == 0){
-			printf("%s\n", "You Looked!");
 			look(setRooms, currentUserLocation);
 		} else if(strcmp(command, "exit") == 0){
 			printf("%s\n", "Goodbye");
 			exit(0);
-		} else {
-			printf("%s\n", "Unkown Command.");
+		} else if (strcmp(command, "clean") == 0){
+			cleanDirty(setRooms, currentUserLocation, 0);
+		} else if(strcmp(command, "dirty") == 0){
+			cleanDirty(setRooms, currentUserLocation, 1);
+		} else if(strcmp(command, "north") == 0){
+			printf("User location before move: %d\n", *currentUserLocation);
+			move(setRooms, currentUserLocation, "north");
+			printf("User location after move: %d\n", *currentUserLocation);
+		} else if(strcmp(command, "south") == 0){
+			move(setRooms, currentUserLocation, "south");
+		} else if(strcmp(command, "east") == 0){
+			move(setRooms, currentUserLocation, "east");
+		} else if(strcmp(command, "west") == 0){
+			move(setRooms, currentUserLocation, "west");
 		}
 	}
 }
@@ -95,26 +121,23 @@ void setUp(void){
 		printf("Creature %d\n", i);
 		scanf("%d %d", &type, &location);
 		creatures[i].type = type;
-		
-		if(type == 0){
-			userLocation = location;
-		}
 
 		for(int j = 0; j < 10; j++){
 			if(rooms[location].crs[j] == NULL){
+				creatures[i].loc = &rooms[location];
 				rooms[location].crs[j] = &creatures[i];
 				break;
 			}
 		}
 	}
-	userInput(rooms, userLocation);
+	userInput(rooms, roomAmount);
 
 }
 
-void look(Room** rooms, int* userLocation){
+void look(Room* rooms, int* userLocation){
 	printf("Room %d, ", *userLocation);
 
-	int state = (*rooms)[*userLocation].state;
+	int state = rooms[*userLocation].state;
 	char cleanliness[12] = "";
 	if(state == 0){
 		strcpy(cleanliness, "Clean");
@@ -124,7 +147,7 @@ void look(Room** rooms, int* userLocation){
 		strcpy(cleanliness, "Dirty");
 	}
 	printf("%s", "neighbors");
-	Room lookRoom = (*rooms)[*userLocation];
+	Room lookRoom = rooms[*userLocation];
 	if(lookRoom.n != NULL){
 		printf(" %d to the North,", lookRoom.n->id);
 	}
@@ -141,14 +164,14 @@ void look(Room** rooms, int* userLocation){
 	printf("%s\n", " contains:");
 	for(int i = 0; i < 10; i++){
 		int lookCreature;
-		if((*rooms)[*userLocation].crs[i] != NULL){
-			lookCreature = (*rooms)[*userLocation].crs[i]->type;
+		if(rooms[*userLocation].crs[i] != NULL){
+			lookCreature = rooms[*userLocation].crs[i]->type;
 			if(lookCreature == 0){
 				printf("%s\n", "PC");
 			} else if(lookCreature == 1){
-				printf("%s\n", "Animal");
+				printf("%s %d\n", "Animal", i);
 			} else{
-				printf("%s\n", "NPC");
+				printf("%s %d\n", "NPC", i);
 			}
 		}
 	}	
@@ -161,12 +184,48 @@ void creatureLook(){
 
 }
 
-void move(){
+void move(Room* rooms, int* userLocation, char* direction){
+	Room r = rooms[*userLocation];
+	if(strcmp(direction, "north") == 0){
+		if(r.n != NULL){
+			*userLocation = r.n->id;
+			return;
+		}
+	} else if(strcmp(direction, "south") == 0){
+		if(r.s != NULL){
+			*userLocation = r.s->id;
+			return;
+		}
+	} else if(strcmp(direction, "east") == 0){
+		if(r.e != NULL){
+			*userLocation = r.e->id;
+			return;
+		}
+	} else if(strcmp(direction, "west") == 0){
+		if(r.w != NULL){
+			*userLocation = r.w->id;
+			return;
+		}
+	}
 
+	printf("There is no neighbor to the %s\n", direction);
 }
 
-void cleanDirty(){
+void cleanDirty(Room* rooms, int* userLocation, int type){
+	int state = rooms[*userLocation].state;
+	int *respectChange;
+	if(type == 0){
+		printf("%s\n", "cleaning...");
+		if(state > 0){
+			rooms[*userLocation].state = state - 1;
 
+		}
+	} else {
+		printf("%s\n", "dirtying...");
+		if(state < 2){
+			rooms[*userLocation].state = state + 1;
+		}
+	}
 }
 
 void creatureCleanDirty(){
