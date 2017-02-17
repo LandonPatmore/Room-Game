@@ -7,5 +7,11 @@
 0 2
 2 2
 2 1
+look
 east
+look
+south
+look
+north
+look
 exit
