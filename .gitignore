@@ -32,3 +32,6 @@
 *.dSYM/
 *.su
 *.txt
+
+# Unignore all dirs
+!*/
