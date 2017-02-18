@@ -30,7 +30,8 @@ void removeCreature(Creature* c, Room* room);
 void addCreatureToRoom(Creature* c, Room* room);
 void cleanDirty(int cd);
 void creatureLike(void);
-void randomMove(Creature* c, int direction);
+void randomMove(Creature* c);
+void creatureAction(Creature* c);
 
 
 //global variables
@@ -210,6 +211,7 @@ int moveCreature(Creature* c, Room* neighbor){
 	}
 	removeCreature(c, c->loc);
 	addCreatureToRoom(c, neighbor);
+	creatureAction(c);
 	return 1;
 }
 
@@ -247,45 +249,64 @@ int emptySpaceIn(Room* room){
 }
 
 void creatureLike(void){
-	srand(time(NULL));
 	for(int i = 0; i < 10; i++){
-		int direction = rand() % 4;
 		if(user->loc->crs[i] != NULL){
 			if(user->loc->crs[i]->type == 1 && user->loc->state != 0 && user->loc->state != 1){
-				printf("%s\n", "Animal doesn't like this room!");
+				printf("Animal %d doesn't like this room!\n", user->loc->crs[i]->id);
 				userRespect = userRespect - 1;
-				randomMove(user->loc->crs[i], direction);
+				randomMove(user->loc->crs[i]);
 			} else if(user->loc->crs[i]->type == 2 && user->loc->state != 1 && user->loc->state != 2){
-				printf("%s\n", "Human doesn't like this room!");
+				printf("Human %d doesn't like this room!\n", user->loc->crs[i]->id);
 				userRespect = userRespect - 1;
-				randomMove(user->loc->crs[i], direction);
+				randomMove(user->loc->crs[i]);
 			}
 		}
 	}
 }
 
-void randomMove(Creature* c, int direction){
+void randomMove(Creature* c){
+	int direction = rand() % 4;
 	switch(direction){
 		case 0:
 			printf("%d Moving North\n", c->id);
-			moveCreature(c, user->loc->n);
+			if(!moveCreature(c, c->loc->n)){
+				randomMove(c);
+			}
 			break;
 		case 1:
 			printf("%d Moving South\n", c->id);
-			moveCreature(c, user->loc->s);
+			if(!moveCreature(c, c->loc->s)){
+				randomMove(c);
+			}
 			break;
 		case 2:
 			printf("%d Moving East\n", c->id);
-			moveCreature(c, user->loc->e);
+			if(!moveCreature(c, c->loc->e)){
+				randomMove(c);
+			}
 			break;
 		case 3:
 			printf("%d Moving West\n", c->id);
-			moveCreature(c, user->loc->w);
+			if(!moveCreature(c, c->loc->w)){
+				randomMove(c);
+			}
 			break;
 	}
 }
 
+void creatureAction(Creature* c){
+	int state = c->loc->state;
+	if(c->type == 1 && c->loc->state != 0 && c->loc->state != 1){
+		printf("%s\n", "Animal cleaned this room to suit its needs!");
+		c->loc->state = state - 1;
+	} else if(c->type == 2 && c->loc->state != 1 && c->loc->state != 2){
+		printf("%s\n", "Human dirtied this room to suit its needs!");
+		c->loc->state = state + 1;
+	}
+}
+
 int main(void){
+	srand(time(NULL));
 	setUp();
 	userInput();
 	return 0;
