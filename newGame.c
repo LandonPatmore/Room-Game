@@ -19,6 +19,7 @@ typedef struct Creature {
 	int type;
 	int id;
 	int rnd[4];
+	int cL;
 	struct Room* loc;
 } Creature;
 
@@ -37,7 +38,7 @@ void creatureAction(Creature* c);
 void drillHole(Creature* c);
 void userRespectChange(int ch);
 void gameChecker(void);
-int checkUserInput(char c1, char c2);
+int checkUserInput(char c1[10]);
 void creatureCommands(Creature* c, char c2);
 void creatureDiscord(Creature* c, int t);
 
@@ -116,7 +117,7 @@ void userInput(void){
 
 		scanf("%s", command);
 		
-		if(!checkUserInput(command[0], command[2])){
+		if(!checkUserInput(command)){
 			if(strcmp(command, "look") == 0){
 				look();
 			} else if (strcmp(command, "clean") == 0){
@@ -145,12 +146,16 @@ void userInput(void){
 	}
 }
 
-int checkUserInput(char c1, char c2){
-	if(isdigit(c1)){
+int checkUserInput(char c1[10]){
+	char* token;
+	token = strtok(c1, ":");
+
+	if(isdigit(*token)){
 		for(int i = 0; i < 10; i++){
 			Creature* cr = user->loc->crs[i];
-			if(cr != NULL && cr->id == atoi(&c1)){
-				creatureCommands(cr, c2);
+			if(cr != NULL && cr->id == atoi(token)){
+				token = strtok(NULL, ":");
+				creatureCommands(cr, token[0]);
 				return 1;
 			}
 		}
@@ -267,22 +272,21 @@ void cleanDirty(int cd, Creature* c){
 }
 
 void creatureLikeness(int ty, Creature* c){
-	int checker[4] = {0, 0, 0, 0};
 	if(c->type == 1 && ty == 0){
 		printf("%d licks your face a lot because you made it clean the room! ", c->id);
-		checker[0] = 1;
+		c->cL = 1;
 		userRespectChange(3);
 	} else if(c->type == 2 && ty == 0) {
 		printf("%d grumbles a lot because you made it clean the room! ", c->id);
-		checker[1] = 1;
+		c->cL = 1;
 		userRespectChange(-3);
 	} else if(c->type == 2 && ty == 1){
 		printf("%d smiles a lot because you made it dirty the room! ", c->id);
-		checker[2] = 1;
+		c->cL = 1;
 		userRespectChange(3);
 	} else if(c->type == 1 && ty == 1){
 		printf("%d growls a lot because you made it dirty the room! ", c->id);
-		checker[3] = 1;
+		c->cL = 1;
 		userRespectChange(-3);
 	}
 
@@ -292,12 +296,12 @@ void creatureLikeness(int ty, Creature* c){
 		if(c != NULL){
 			if(ty == 0){
 				if(c->type == 1){
-					if(checker[0] == 0){
+					if(c->cL == 0){
 						printf("%d licks your face because you cleaned! ", c->id);
 						userRespectChange(1);
 					}
 				} else if(c->type == 2){
-					if(checker[1] == 0){
+					if(c->cL == 0){
 						printf("%d Grumbles because you cleaned! ", c->id);
 						userRespectChange(-1);
 					}
@@ -307,12 +311,12 @@ void creatureLikeness(int ty, Creature* c){
 				}
 			} else{
 				if(c->type == 2){
-					if(checker[2] == 0){
+					if(c->cL == 0){
 						printf("%d smiles becuase you dirtied! ", c->id);
 						userRespectChange(1);
 					}
 				} else if(c->type == 1){
-					if(checker[3] == 0){
+					if(c->cL == 0){
 						printf("%d Growls because you dirtied! ", c->id);
 						userRespectChange(-1);
 					}
@@ -323,6 +327,7 @@ void creatureLikeness(int ty, Creature* c){
 			}
 		}
 	}
+	c->cL = 0;
 }
 
 int moveCreature(Creature* c, Room* neighbor){
