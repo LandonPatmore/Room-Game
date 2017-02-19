@@ -18,6 +18,7 @@ typedef struct Room {
 typedef struct Creature {
 	int type;
 	int id;
+	int rnd[4];
 	struct Room* loc;
 } Creature;
 
@@ -38,6 +39,7 @@ void userRespectChange(int ch);
 void gameChecker(void);
 int checkUserInput(char c1, char c2);
 void creatureCommands(Creature* c, char c2);
+void creatureDiscord(Creature* c, int t);
 
 
 //global variables
@@ -45,8 +47,6 @@ int userRespect = 40;
 Creature* user;
 Creature* creatures;
 Room* rooms;
-
-//random seed for each time the program starts
 
 //actual functions
 void setUp(void){
@@ -89,20 +89,19 @@ void setUp(void){
 		}
 	}
 
-	//printf("%s\n", "Enter amount of creatures: ");
 	scanf("%d", &creatureAmount);
 	creatures = (Creature*)malloc(sizeof(Creature) * creatureAmount);
 
 	for(int i = 0; i < creatureAmount; i++){
-		int type;
 		int location;
-
-		//printf("Creature %d\n", i);
-		scanf("%d %d", &type, &location);
-		creatures[i].type = type;
+		scanf("%d %d", &creatures[i].type, &location);
 		creatures[i].id = i;
 
-		if(type == 0){
+		for(int j = 0; j < 4; j++){
+			creatures[i].rnd[j] = 0;
+		}
+
+		if(creatures[i].type == 0){
 			user = &creatures[i];
 		}
 
@@ -115,12 +114,9 @@ void userInput(void){
 	while(strcmp(command, "exit") != 0){
 		gameChecker();
 
-		// printf("%s\n", "Enter a command: ");
 		scanf("%s", command);
 		
-
 		if(!checkUserInput(command[0], command[2])){
-
 			if(strcmp(command, "look") == 0){
 				look();
 			} else if (strcmp(command, "clean") == 0){
@@ -144,15 +140,12 @@ void userInput(void){
 					printf("%s\n", "You left towards the West");
 				}
 			}
-
 			printf("\n");
-
 		}
 	}
 }
 
 int checkUserInput(char c1, char c2){
-	
 	if(isdigit(c1)){
 		for(int i = 0; i < 10; i++){
 			Creature* cr = user->loc->crs[i];
@@ -178,65 +171,84 @@ void creatureCommands(Creature* c, char c2){
 		if(moveCreature(c, c->loc->n)){
 			printf("%d Moved North by the PC\n", c->id);
 		} else {
-			if(type == 1){
-				printf("%d Grumbles because it can't move!\n", c->id);
-			} else {
-				if(type == 1){
-					printf("%d Grumbles because it can't move!\n", c->id);
-				}else{
-					printf("%d Growls becuase it can't move!\n", c->id);
-				}
-				userRespectChange(-1);
-			}
+			creatureDiscord(c, type);
 		}
 	} else if(c2 == 's'){
 		if(moveCreature(c, c->loc->s)){
 			printf("%d Moved South by the PC\n", c->id);
 		} else {
-			if(type == 1){
-				printf("%d Grumbles because it can't move!\n", c->id);
-			} else {
-				if(type == 1){
-					printf("%d Grumbles because it can't move!\n", c->id);
-				}else{
-					printf("%d Growls becuase it can't move!\n", c->id);
-				}
-				userRespectChange(-1);
-			}
+			creatureDiscord(c, type);
 		}
 	} else if(c2 == 'e'){
 		if(moveCreature(c, c->loc->e)){
 			printf("%d Moved East by the PC\n", c->id);
 		} else {
-			if(type == 1){
-				printf("%d Grumbles because it can't move!\n", c->id);
-			} else {
-				if(type == 1){
-					printf("%d Grumbles because it can't move!\n", c->id);
-				}else{
-					printf("%d Growls becuase it can't move!\n", c->id);
-				}
-				userRespectChange(-1);
-			}
+			creatureDiscord(c, type);
 		}
 	} else if(c2 == 'w'){
 		if(moveCreature(c, c->loc->w)){
 			printf("%d Moved West by the PC\n", c->id);
 		} else {
-			if(type == 1){
-				printf("%d Grumbles because it can't move!\n", c->id);
-			} else {
-				if(type == 1){
-					printf("%d Grumbles because it can't move!\n", c->id);
-				}else{
-					printf("%d Growls becuase it can't move!\n", c->id);
-				}
-				userRespectChange(-1);
-			}
+			creatureDiscord(c, type);
 		}
 	}
 
 	printf("\n");
+}
+
+void look(void){
+
+	int state = user->loc->state;
+	char cleanliness[11] = "";
+	if(state == 0){
+		strcpy(cleanliness, "Clean");
+	} else if(state == 1){
+		strcpy(cleanliness, "Half-Dirty");
+	} else {
+		strcpy(cleanliness, "Dirty");
+	}
+	printf("Room %d, %s, ", user->loc->id, cleanliness);
+	printf("%s", "neighbors");
+
+	Room* r = user->loc;
+	if(r->n != NULL){
+		printf(" %d to the North,", r->n->id);
+	}
+	if(r->s != NULL){
+		printf(" %d to the South,", r->s->id);
+	}
+	if(r->e != NULL){
+		printf(" %d to the East,", r->e->id);
+	}
+	if(r->w != NULL){
+		printf(" %d to the West,", r->w->id);
+	}
+
+	printf("%s\n", " contains:");
+	for(int i = 0; i < 10; i++){
+		if(user->loc->crs[i] != NULL){
+			Creature* c = user->loc->crs[i];
+			int cType = c->type;
+			int cId = c->id;
+			if(cType == 0){
+				printf("%s\n", "PC");
+			} else if(cType == 1){
+				printf("%s %d\n", "Animal", cId);
+			} else{
+				printf("%s %d\n", "Human", cId);
+			}
+		}
+	}	
+}
+
+
+void creatureDiscord(Creature* c, int t){
+	if(t == 1){
+		printf("%d Grumbles because it can't move!\n", c->id);
+	} else {
+		printf("%d Growls becuase it can't move!\n", c->id);
+	}
+	userRespectChange(-1);
 }
 
 void cleanDirty(int cd, Creature* c){
@@ -350,6 +362,9 @@ void addCreatureToRoom(Creature* c, Room* room){
 		if(room->crs[i] == NULL){
 			c->loc = room;
 			room->crs[i] = c;
+			for(int j = 0; j < 4; j++){
+				c->rnd[j] = 0;
+			}
 			break;
 		}
 	}
@@ -370,11 +385,10 @@ int emptySpaceIn(Room* room){
 
 void randomMove(Creature* c){
 	int direction = rand() % 4;
-	static int checkers[4] = {0, 0, 0, 0};
 
 	int count = 0;
 	for(int i = 0; i < 4; i++){
-		if(checkers[i] == 1){
+		if(c->rnd[i] == 1){
 			count++;
 		}
 	}
@@ -387,36 +401,36 @@ void randomMove(Creature* c){
 
 	switch(direction){
 		case 0:
-			//printf("%d Attempting to leave North\n", c->id);
 			if(!moveCreature(c, l->n)){
-				checkers[0] = 1;
+				// printf("%d Couldn't leave North\n", c->id);
+				c->rnd[0] = 1;
 				randomMove(c);
 			} else {
 				printf("%d Left towards North\n", c->id);
 			}
 			break;
 		case 1:
-			//printf("%d Attempting to leave South\n", c->id);
 			if(!moveCreature(c, l->s)){
-				checkers[1] = 1;
+				// printf("%d Couldn't leave South\n", c->id);
+				c->rnd[1] = 1;
 				randomMove(c);
 			} else {
 				printf("%d Left towards South\n", c->id);
 			}
 			break;
 		case 2:
-			//printf("%d Attempting to leave East\n", c->id);
 			if(!moveCreature(c, l->e)){
-				checkers[2] = 1;
+				// printf("%d Couldn't leave East\n", c->id);
+				c->rnd[2] = 1;
 				randomMove(c);
 			} else {
 				printf("%d Left towards East\n", c->id);
 			}
 			break;
 		case 3:
-			//printf("%d Attempting to leave West\n", c->id);
 			if(!moveCreature(c, l->w)){
-				checkers[3] = 1;
+				// printf("%d Couldn't leave West\n", c->id);
+				c->rnd[3] = 1;
 				randomMove(c);
 			} else {
 				printf("%d Left towards West\n", c->id);
@@ -446,56 +460,10 @@ void drillHole(Creature* c){
 void creatureAction(Creature* c){
 	int state = c->loc->state;
 	if(c->type == 1 && state != 0 && state != 1){
-		//printf("Animal %d cleaned this room to suit its needs!\n", c->id);
 		c->loc->state = state - 1;
 	} else if(c->type == 2 && state != 1 && state != 2){
-		//printf("Human %d cleaned this room to suit its needs!\n", c->id);
 		c->loc->state = state + 1;
 	}
-}
-
-void look(void){
-
-	int state = user->loc->state;
-	char cleanliness[11] = "";
-	if(state == 0){
-		strcpy(cleanliness, "Clean");
-	} else if(state == 1){
-		strcpy(cleanliness, "Half-Dirty");
-	} else {
-		strcpy(cleanliness, "Dirty");
-	}
-	printf("Room %d, %s, ", user->loc->id, cleanliness);
-	printf("%s", "neighbors");
-	Room lookRoom = *user->loc;
-	if(lookRoom.n != NULL){
-		printf(" %d to the North,", lookRoom.n->id);
-	}
-	if(lookRoom.s != NULL){
-		printf(" %d to the South,", lookRoom.s->id);
-	}
-	if(lookRoom.e != NULL){
-		printf(" %d to the East,", lookRoom.e->id);
-	}
-	if(lookRoom.w != NULL){
-		printf(" %d to the West,", lookRoom.w->id);
-	}
-
-	printf("%s\n", " contains:");
-	for(int i = 0; i < 10; i++){
-		if(user->loc->crs[i] != NULL){
-			Creature* c = user->loc->crs[i];
-			int cType = c->type;
-			int cId = c->id;
-			if(cType == 0){
-				printf("%s\n", "PC");
-			} else if(cType == 1){
-				printf("%s %d\n", "Animal", cId);
-			} else{
-				printf("%s %d\n", "Human", cId);
-			}
-		}
-	}	
 }
 
 void userRespectChange(int ch){
