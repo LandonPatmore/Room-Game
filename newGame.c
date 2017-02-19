@@ -6,42 +6,42 @@
 
 //structs
 typedef struct Room {
-	int state;
-	int id;
-	struct Room* n;
-	struct Room* s;
-	struct Room* e;
-	struct Room* w;
-	struct Creature* crs[10];
+	int state; //the state of the room
+	int id; //id of room to easily find it
+	struct Room* n; //north neighbor
+	struct Room* s; //south neighbor
+	struct Room* e; //east neighbor
+	struct Room* w; //west neighbor
+	struct Creature* crs[10]; //the creatures pointer array of all the current creatures in the room
 } Room;
 
 typedef struct Creature {
-	int type;
-	int id;
-	int rnd[4];
-	int cL;
-	struct Room* loc;
+	int type; //type of creature
+	int id; //creature id for easily finding it
+	int rnd[4]; //used to check if the creature has already attempted to go to a room and also for drillCeiling
+	int cL; //creatureLikeness check
+	struct Room* loc; //the room in which the creature is actually in
 } Creature;
 
 //prototypes
-void setUp(void);
-void userInput(void);
-void look(void);
-int moveCreature(Creature* c, Room* neighbor);
-int emptySpaceIn(Room* room);
-void creatureLikeness(int ty, Creature* c);
-void removeCreature(Creature* c, Room* room);
-void addCreatureToRoom(Creature* c, Room* room);
-void cleanDirty(int cd, Creature* c);
-void randomMove(Creature* c);
-void creatureAction(Creature* c);
-void drillHole(Creature* c);
-void userRespectChange(int ch);
-void gameChecker(void);
-int checkUserInput(char c1[10]);
-void creatureCommands(Creature* c, char c2);
-void creatureDiscord(Creature* c, int t);
-
+void setUp(void); //sets up all of the rooms and the creatures
+void userInput(void); //takes the user's input and calls functions based on the input
+void look(void); //looks into the room the user is currently in and gives all the info about it
+int moveCreature(Creature* c, Room* neighbor); //attempts to move the creature
+int emptySpaceIn(Room* room); //checks to see if there is empty space in the room
+void creatureLikeness(int ty, Creature* c); //checks to see if the creature likes/dislikes what the user just commanded
+void removeCreature(Creature* c, Room* room); //removes the creature from the current room
+void addCreatureToRoom(Creature* c, Room* room); //adds the creature to a room
+void cleanDirty(int cd, Creature* c); //checks to see if the user has cleaned/dirtied the room and changes the room state
+void randomMove(Creature* c); //randomly moves the creature to an adjacent room
+void creatureAction(Creature* c); //called when the creature moves to another room and it doesn't like the state of the room
+void drillHole(Creature* c); //called when the creature can't move to any adjacent room
+void userRespectChange(int ch); //changes the user's respect based on the input and creatures' reactions
+int gameChecker(void); //checks to see if the respect has gone above 80 or dropped below 0 and ends the game
+int checkUserInput(char c1[10]); //checks to see if the input is directing the creature to do something or not
+void creatureCommands(Creature* c, char c2); //does the action the user told a creature to do
+void creatureDiscord(Creature* c, int t); //called when the user tells the creature to move, but it can't
+void freeMem(void); //frees memory once the program is done running
 
 //global variables
 int userRespect = 40;
@@ -56,7 +56,7 @@ void setUp(void){
 
 	//printf("%s\n", "Enter amount of rooms: ");
 	scanf("%d", &roomAmount);
-	rooms = (Room*)malloc(sizeof(Room) * roomAmount);
+	rooms = malloc(sizeof(Room) * roomAmount);
 
 	for(int i = 0; i < roomAmount; i++){
 		int north, south, east, west;
@@ -91,12 +91,13 @@ void setUp(void){
 	}
 
 	scanf("%d", &creatureAmount);
-	creatures = (Creature*)malloc(sizeof(Creature) * creatureAmount);
+	creatures = malloc(sizeof(Creature) * creatureAmount);
 
 	for(int i = 0; i < creatureAmount; i++){
 		int location;
 		scanf("%d %d", &creatures[i].type, &location);
 		creatures[i].id = i;
+        creatures[i].cL = 0;
 
 		for(int j = 0; j < 4; j++){
 			creatures[i].rnd[j] = 0;
@@ -113,37 +114,42 @@ void setUp(void){
 void userInput(void){
 	char command[10] = "";
 	while(strcmp(command, "exit") != 0){
-		gameChecker();
+		if(!gameChecker()){
 
-		scanf("%s", command);
-		
-		if(!checkUserInput(command)){
-			if(strcmp(command, "look") == 0){
-				look();
-			} else if (strcmp(command, "clean") == 0){
-				cleanDirty(0, user);
-			} else if(strcmp(command, "dirty") == 0){
-				cleanDirty(1, user);
-			} else if(strcmp(command, "north") == 0){
-				if(moveCreature(user, user->loc->n)){
-					printf("%s\n", "You left towards the North");
-				}
-			} else if(strcmp(command, "south") == 0){
-				if(moveCreature(user, user->loc->s)){
-					printf("%s\n", "You left towards the South");
-				}
-			} else if(strcmp(command, "east") == 0){
-				if(moveCreature(user, user->loc->e)){
-					printf("%s\n", "You left towards the East");
-				}
-			} else if(strcmp(command, "west") == 0){
-				if(moveCreature(user, user->loc->w)){
-					printf("%s\n", "You left towards the West");
-				}
-			}
-			printf("\n");
-		}
+            scanf("%s", command);
+            
+            if(!checkUserInput(command)){
+                if(strcmp(command, "look") == 0){
+                    look();
+                } else if (strcmp(command, "clean") == 0){
+                    cleanDirty(0, user);
+                } else if(strcmp(command, "dirty") == 0){
+                    cleanDirty(1, user);
+                } else if(strcmp(command, "north") == 0){
+                    if(moveCreature(user, user->loc->n)){
+                        printf("%s\n", "You left towards the North");
+                    }
+                } else if(strcmp(command, "south") == 0){
+                    if(moveCreature(user, user->loc->s)){
+                        printf("%s\n", "You left towards the South");
+                    }
+                } else if(strcmp(command, "east") == 0){
+                    if(moveCreature(user, user->loc->e)){
+                        printf("%s\n", "You left towards the East");
+                    }
+                } else if(strcmp(command, "west") == 0){
+                    if(moveCreature(user, user->loc->w)){
+                        printf("%s\n", "You left towards the West");
+                    }
+                }
+                printf("\n");
+            }
+        } else {
+            break;
+        }
 	}
+    freeMem();
+    exit(0);
 }
 
 int checkUserInput(char c1[10]){
@@ -476,14 +482,20 @@ void userRespectChange(int ch){
 	printf("Respect is now %d\n", userRespect);
 }
 
-void gameChecker(void){
+void freeMem(void){
+    free(rooms);
+    free(creatures);
+}
+
+int gameChecker(void){
 	if(userRespect > 80){
 		printf("THE ALMIGHTY PC HAS BEEN PRAISED WITH A SCORE OF: %d\n", userRespect);
-		exit(0);
+        return 1;
 	} else if(userRespect < 0){
 		printf("THE UNWORTHY PC IS DESGRACEFUL WITH A SCORE OF: %d\n", userRespect);
-		exit(0);
+        return 1;
 	}
+    return 0;
 }
 
 int main(void){
