@@ -2,7 +2,7 @@
 CC     = gcc
 CFLAGS = -g
 LFLAGS =
-OBJS   = newGame.o
+OBJS   = game.o
 EXEC   = program
 LIBS  =
 INCS  =
