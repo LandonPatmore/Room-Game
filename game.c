@@ -336,7 +336,7 @@ int moveCreature(Creature* c, Room* neighbor){
 		return 0;
 	}
 	if(!emptySpaceIn(neighbor)){
-		//printf("No room in that room!\n");
+		printf("Room Full!\n");
 		return 0;
 	}
 	removeCreature(c, c->loc);
