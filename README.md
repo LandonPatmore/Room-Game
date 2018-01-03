@@ -1,2 +1,8 @@
-# csc322-hw1
-Homework 1 for CSC322
+# Room Game
+
+## Description
+* Creature room game where the user cleans and dirties rooms to gain respect.
+
+## Language
+* C
+
